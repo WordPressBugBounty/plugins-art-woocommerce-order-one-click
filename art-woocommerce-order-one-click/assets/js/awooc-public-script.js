@@ -452,6 +452,7 @@ function _slicedToArray(r, e) {
 
 
 
+
 var UpdateQuantity = /*#__PURE__*/function () {
   function UpdateQuantity(toMail, request, event) {
     _classCallCheck(this, UpdateQuantity);
@@ -533,7 +534,7 @@ var UpdateQuantity = /*#__PURE__*/function () {
     value: function setMaxValueInput(input) {
       var minValue = this.getSafeValue(input.min, 1);
       var maxValue = this.getSafeValue(input.max, input.value);
-      input.value = Math.min(Math.max(parseInt(input.value, 10) || minValue, minValue), maxValue);
+      input.value = Math.min(Math.max(parseInt(String(input.value), 10) || minValue, minValue), maxValue);
       this.qtyVal = input.value;
     }
   }, {
@@ -578,7 +579,7 @@ var UpdateQuantity = /*#__PURE__*/function () {
       if (!priceValue) {
         return;
       }
-      var amount = this.formatAmount(parseFloat(priceValue) * this.qtyVal);
+      var amount = this.formatNumber(this.formatDecimal(priceValue) * this.qtyVal);
       this.updateDOMAmount(amount);
       this.updateMailAmount();
     }
@@ -587,7 +588,7 @@ var UpdateQuantity = /*#__PURE__*/function () {
     value: function getPrice() {
       var _priceElement$textCon;
       var priceElement = document.querySelector('.awooc-popup-price .woocommerce-Price-currencyValue');
-      return (priceElement === null || priceElement === void 0 || (_priceElement$textCon = priceElement.textContent) === null || _priceElement$textCon === void 0 ? void 0 : _priceElement$textCon.replace(settings.popup.price_decimal_sep, '.').replace(/\s+/g, '')) || null;
+      return (priceElement === null || priceElement === void 0 || (_priceElement$textCon = priceElement.textContent) === null || _priceElement$textCon === void 0 ? void 0 : _priceElement$textCon.replace(/\s+/g, '')) || null;
     }
   }, {
     key: "getSafeValue",
@@ -595,9 +596,54 @@ var UpdateQuantity = /*#__PURE__*/function () {
       return value !== '' && !Number.isNaN(parseFloat(value)) ? parseFloat(value) : defaultValue;
     }
   }, {
-    key: "formatAmount",
-    value: function formatAmount(amount) {
-      return amount.toFixed(settings.popup.price_num_decimals).replace('.', settings.popup.price_decimal_sep).replace(/\B(?=(\d{3})+(?!\d))/g, settings.popup.price_thousand_sep);
+    key: "formatNumber",
+    value: function formatNumber(input) {
+      var number = typeof input === 'number' ? input : parseFloat(input);
+      if (isNaN(number)) {
+        return 'Invalid number';
+      }
+      var _settings$popup = settings.popup,
+        decimalSeparator = _settings$popup.price_decimal_sep,
+        thousandSeparator = _settings$popup.price_thousand_sep,
+        decimalPlaces = _settings$popup.price_num_decimals;
+      var _String$split = String(number).split('.'),
+        _String$split2 = _slicedToArray(_String$split, 2),
+        integerPart = _String$split2[0],
+        decimalPart = _String$split2[1];
+      var formattedIntegerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, thousandSeparator);
+      var formattedDecimalPart = (decimalPart || '').padEnd(decimalPlaces, '0').slice(0, decimalPlaces);
+      return "".concat(formattedIntegerPart).concat(decimalSeparator).concat(formattedDecimalPart);
+    }
+  }, {
+    key: "formatDecimal",
+    value: function formatDecimal(number) {
+      number = number !== null && number !== void 0 ? number : 0;
+      var _settings$popup2 = settings.popup,
+        decimalPlaces = _settings$popup2.price_num_decimals,
+        decimalSeparator = _settings$popup2.price_decimal_sep;
+      if (typeof number !== 'number') {
+        var decimals = ['.', decimalSeparator];
+
+        // Заменяем все возможные десятичные разделители на точку
+        decimals.forEach(function (dec) {
+          number = String(number).replace(new RegExp("\\".concat(dec), 'g'), '.');
+        });
+
+        // Удаляем все символы, кроме цифр, точек и минусов
+        number = number.replace(/[^0-9.-]/g, '');
+
+        // Удаляем лишние точки, оставляя только одну (последнюю)
+        number = number.replace(/\.+(?![^.]+$)|[^0-9.-]/g, '');
+      }
+      number = parseFloat(number);
+      if (decimalPlaces !== false) {
+        var decimalsCount = String(decimalPlaces) === '' ? 2 : parseInt(String(decimalPlaces), 10); // По умолчанию 2 знака
+        number = number.toFixed(decimalsCount);
+      } else if (typeof number === 'number') {
+        // Если dp не указан, но number является числом, используем высокую точность
+        number = number.toFixed(20);
+      }
+      return number;
     }
   }, {
     key: "updateDOMAmount",
