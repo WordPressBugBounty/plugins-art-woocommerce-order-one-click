@@ -483,22 +483,22 @@ var UpdateQuantity = /*#__PURE__*/function () {
       quantityInput.addEventListener('input', function (e) {
         return _this.handleInputEvent(e);
       });
-      var minusButton = document.querySelector('.awooc-popup-input-qty--minus');
-      var plusButton = document.querySelector('.awooc-popup-input-qty--plus');
-      if (minusButton && plusButton) {
-        this.handlerPlusMinusButtonsEvent(quantityInput, minusButton, plusButton);
-      }
+      this.handlerPlusMinusButtonsEvent(quantityInput);
     }
   }, {
     key: "handlerPlusMinusButtonsEvent",
-    value: function handlerPlusMinusButtonsEvent(quantityInput, minusButton, plusButton) {
+    value: function handlerPlusMinusButtonsEvent(quantityInput) {
       var _this2 = this;
-      minusButton.addEventListener('click', function () {
-        return _this2.updateInputQuantity(quantityInput, 'decrease');
-      });
-      plusButton.addEventListener('click', function () {
-        return _this2.updateInputQuantity(quantityInput, 'increase');
-      });
+      var minusButton = document.querySelector('.awooc-popup-input-qty--minus');
+      var plusButton = document.querySelector('.awooc-popup-input-qty--plus');
+      if (minusButton && plusButton) {
+        minusButton.addEventListener('click', function () {
+          return _this2.updateInputQuantity(quantityInput, 'decrease');
+        });
+        plusButton.addEventListener('click', function () {
+          return _this2.updateInputQuantity(quantityInput, 'increase');
+        });
+      }
     }
   }, {
     key: "updateInputQuantity",
@@ -508,6 +508,9 @@ var UpdateQuantity = /*#__PURE__*/function () {
       var minValue = this.getSafeValue(inputElement.min, -Infinity);
       var maxValue = this.getSafeValue(inputElement.max, Infinity);
       var newValue = currentValue + (action === 'decrease' ? -step : step);
+      var decimalPlaces = Math.max(0, -Math.floor(Math.log10(step))); // Определяем количество знаков после запятой для step
+      newValue = parseFloat(newValue.toFixed(decimalPlaces)); // Округляем до нужного количества знаков
+
       if (newValue >= minValue && newValue <= maxValue) {
         inputElement.value = newValue;
         inputElement.dispatchEvent(new Event('input', {
@@ -532,9 +535,9 @@ var UpdateQuantity = /*#__PURE__*/function () {
   }, {
     key: "setMaxValueInput",
     value: function setMaxValueInput(input) {
-      var minValue = this.getSafeValue(input.min, 1);
+      var minValue = this.getSafeValue(input.min, input.step);
       var maxValue = this.getSafeValue(input.max, input.value);
-      input.value = Math.min(Math.max(parseInt(String(input.value), 10) || minValue, minValue), maxValue);
+      input.value = Math.min(Math.max(parseFloat(String(input.value)) || minValue, minValue), maxValue);
       this.qtyVal = input.value;
     }
   }, {
