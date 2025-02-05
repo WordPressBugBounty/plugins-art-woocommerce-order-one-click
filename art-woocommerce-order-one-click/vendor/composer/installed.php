@@ -3,7 +3,7 @@
         'name' => 'art/art-woocommerce-order-one-click',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '4b1a0af0f10598a34657d75459fb512dfb2107ae',
+        'reference' => 'ba82ddb0c6f1beaf13079b8eeb37cc31aefdf55b',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'art/art-woocommerce-order-one-click' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '4b1a0af0f10598a34657d75459fb512dfb2107ae',
+            'reference' => 'ba82ddb0c6f1beaf13079b8eeb37cc31aefdf55b',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
