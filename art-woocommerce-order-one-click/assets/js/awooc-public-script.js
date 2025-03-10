@@ -582,7 +582,7 @@ var UpdateQuantity = /*#__PURE__*/function () {
       if (!priceValue) {
         return;
       }
-      var amount = this.formatNumber(this.formatDecimal(priceValue) * this.qtyVal);
+      var amount = this.displayPrice(this.parsePrice(priceValue) * this.qtyVal);
       this.updateDOMAmount(amount);
       this.updateMailAmount();
     }
@@ -599,54 +599,87 @@ var UpdateQuantity = /*#__PURE__*/function () {
       return value !== '' && !Number.isNaN(parseFloat(value)) ? parseFloat(value) : defaultValue;
     }
   }, {
-    key: "formatNumber",
-    value: function formatNumber(input) {
-      var number = typeof input === 'number' ? input : parseFloat(input);
+    key: "getPriceSettings",
+    value: function getPriceSettings() {
+      var _settings$popup = settings.popup,
+        _settings$popup$price = _settings$popup.price_num_decimals,
+        rawDecimalPlaces = _settings$popup$price === void 0 ? 0 : _settings$popup$price,
+        _settings$popup$price2 = _settings$popup.price_decimal_sep,
+        rawDecimalSeparator = _settings$popup$price2 === void 0 ? '.' : _settings$popup$price2,
+        _settings$popup$price3 = _settings$popup.price_thousand_sep,
+        rawThousandSeparator = _settings$popup$price3 === void 0 ? '' : _settings$popup$price3;
+      var decimalSeparator = rawDecimalSeparator || '.';
+      var thousandSeparator = rawThousandSeparator || '';
+      var decimalPlaces = rawDecimalPlaces || 0;
+      return {
+        decimalPlaces: decimalPlaces,
+        decimalSeparator: decimalSeparator,
+        thousandSeparator: thousandSeparator
+      };
+    }
+  }, {
+    key: "displayPrice",
+    value: function displayPrice(input) {
+      var sanitizedInput = String(input).replace(/[^0-9.]/g, '');
+      var number = parseFloat(sanitizedInput);
       if (isNaN(number)) {
         return 'Invalid number';
       }
-      var _settings$popup = settings.popup,
-        decimalSeparator = _settings$popup.price_decimal_sep,
-        thousandSeparator = _settings$popup.price_thousand_sep,
-        decimalPlaces = _settings$popup.price_num_decimals;
-      var _String$split = String(number).split('.'),
+      var _this$getPriceSetting = this.getPriceSettings(),
+        decimalPlaces = _this$getPriceSetting.decimalPlaces,
+        decimalSeparator = _this$getPriceSetting.decimalSeparator,
+        thousandSeparator = _this$getPriceSetting.thousandSeparator;
+
+      // Разделяем на целую и дробную части
+      var _String$split = String(number.toFixed(decimalPlaces)).split('.'),
         _String$split2 = _slicedToArray(_String$split, 2),
         integerPart = _String$split2[0],
         decimalPart = _String$split2[1];
+
+      // Форматируем целую часть с разделителями тысяч
       var formattedIntegerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, thousandSeparator);
-      var formattedDecimalPart = (decimalPart || '').padEnd(decimalPlaces, '0').slice(0, decimalPlaces);
-      return "".concat(formattedIntegerPart).concat(decimalSeparator).concat(formattedDecimalPart);
+
+      // Форматируем дробную часть, если требуется
+      var formattedDecimalPart = decimalPlaces > 0 ? decimalPart.padEnd(decimalPlaces, '0').slice(0, decimalPlaces) : '';
+      return decimalPlaces > 0 && formattedDecimalPart ? "".concat(formattedIntegerPart).concat(decimalSeparator).concat(formattedDecimalPart) : formattedIntegerPart;
     }
   }, {
-    key: "formatDecimal",
-    value: function formatDecimal(number) {
+    key: "parsePrice",
+    value: function parsePrice(number) {
       number = number !== null && number !== void 0 ? number : 0;
-      var _settings$popup2 = settings.popup,
-        decimalPlaces = _settings$popup2.price_num_decimals,
-        decimalSeparator = _settings$popup2.price_decimal_sep;
-      if (typeof number !== 'number') {
-        var decimals = ['.', decimalSeparator];
+      var _this$getPriceSetting2 = this.getPriceSettings(),
+        decimalPlaces = _this$getPriceSetting2.decimalPlaces,
+        decimalSeparator = _this$getPriceSetting2.decimalSeparator,
+        thousandSeparator = _this$getPriceSetting2.thousandSeparator;
 
-        // Заменяем все возможные десятичные разделители на точку
-        decimals.forEach(function (dec) {
-          number = String(number).replace(new RegExp("\\".concat(dec), 'g'), '.');
+      // Функция для экранирования символов в регулярных выражениях
+      var escapeRegExp = function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      };
+      if (typeof number !== 'number') {
+        number = String(number);
+        [thousandSeparator, ' ', '.', ','].filter(Boolean) // Игнорируем пустые значения
+        .forEach(function (sep) {
+          if (sep !== decimalSeparator) {
+            // Исключаем десятичный разделитель
+            number = number.replace(new RegExp(escapeRegExp(sep), 'g'), '');
+          }
         });
 
-        // Удаляем все символы, кроме цифр, точек и минусов
-        number = number.replace(/[^0-9.-]/g, '');
+        // Нормализуем десятичный разделитель к точке (.)
+        if (decimalSeparator !== '.') {
+          number = number.replace(new RegExp(escapeRegExp(decimalSeparator), 'g'), '.');
+        }
 
-        // Удаляем лишние точки, оставляя только одну (последнюю)
+        // Удаляем лишние точки и все символы, кроме цифр, точки и минуса
         number = number.replace(/\.+(?![^.]+$)|[^0-9.-]/g, '');
       }
-      number = parseFloat(number);
+      number = parseFloat(number) || 0;
       if (decimalPlaces !== false) {
-        var decimalsCount = String(decimalPlaces) === '' ? 2 : parseInt(String(decimalPlaces), 10); // По умолчанию 2 знака
-        number = number.toFixed(decimalsCount);
-      } else if (typeof number === 'number') {
-        // Если dp не указан, но number является числом, используем высокую точность
-        number = number.toFixed(20);
+        var decimalsCount = String(decimalPlaces) === '' ? 2 : parseInt(decimalPlaces, 10); // По умолчанию 2 знака
+        return number.toFixed(decimalsCount);
       }
-      return number;
+      return number.toFixed(20);
     }
   }, {
     key: "updateDOMAmount",
