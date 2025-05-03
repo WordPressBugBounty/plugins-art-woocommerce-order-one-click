@@ -1163,7 +1163,6 @@ var VariationSwatchesByCartFlows = /*#__PURE__*/function () {
     value: function onClickSwatchesOption(e) {
       var swatch = e.target;
       if (this.isSwatchSelected(swatch)) {
-        this.deselectSwatch(swatch);
         this.resetButtonData(swatch);
       } else {
         this.deselectAllSwatches(swatch);
@@ -1179,9 +1178,15 @@ var VariationSwatchesByCartFlows = /*#__PURE__*/function () {
       if (!button) {
         return;
       }
-      button.disabled = true;
-      button.classList.remove('cfvsw_variation_found');
-      button.dataset.selectedVariant = '';
+      var select = this.getSelectElement(swatch);
+      var hasDefaultValue = (select === null || select === void 0 ? void 0 : select.value) && select.value !== '';
+      if (hasDefaultValue) {
+        this.updateButtonData(swatch.closest('form'));
+      } else {
+        button.disabled = true;
+        button.classList.remove('cfvsw_variation_found');
+        button.dataset.selectedVariant = '';
+      }
     }
   }, {
     key: "updateSelectOption",
@@ -1190,18 +1195,17 @@ var VariationSwatchesByCartFlows = /*#__PURE__*/function () {
       var select = this.getSelectElement(swatch);
       if (select) {
         select.value = value;
-        select.dispatchEvent(new Event('change'));
+        setTimeout(function () {
+          select.dispatchEvent(new CustomEvent('change', {
+            bubbles: true
+          }));
+        }, 50);
       }
     }
   }, {
     key: "isSwatchSelected",
     value: function isSwatchSelected(swatch) {
       return (!swatch.classList.contains('cfvsw-swatches-disabled') || !swatch.classList.contains('cfvsw-swatches-out-of-stock')) && swatch.classList.contains('cfvsw-selected-swatch');
-    }
-  }, {
-    key: "deselectSwatch",
-    value: function deselectSwatch(swatch) {
-      swatch.classList.remove('cfvsw-selected-swatch');
     }
   }, {
     key: "deselectAllSwatches",
